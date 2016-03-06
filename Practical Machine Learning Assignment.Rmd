@@ -1,0 +1,97 @@
+---
+title: "Practical Machine Learning Assignment"
+author: "knyzam"
+date: "February 12, 2016"
+output: html_document
+---
+
+
+#Executive Summary
+
+In daily life, people always look at how much exercise activity they did instead of how  effective they do it. This investigation has not received much intention so far even though it provides very useful information for sporting events.
+
+In this report, six young and healthy participants were asked to perform 1 set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+
+This report aims to use machine learning algoritmhs to predict the class of exercise the individuals was performing by using meaurements available from devices such as Jawbone Up, Nike FuelBand, and Fitbit.
+
+#Exploratory Data Analysis
+
+##Data Processing and Data Cleaning
+
+```{r}
+train <- read.csv('pml-training.csv', na.strings=c("NA","#DIV/0!", ""))
+
+test <- read.csv('pml-testing.csv' , na.strings=c("NA", "#DIV/0!", ""))
+
+train<- train[,colSums(is.na(train)) == 0]
+
+test <- test[,colSums(is.na(test)) == 0]
+
+train <- train[,-c(1:7)]
+
+test <- test[,-c(1:7)]
+```
+
+##Data Analysis
+
+```{r}
+
+library(randomForest)
+library(caret)
+library(lattice)
+library(ggplot2)
+library(kernlab)
+seed <- as.numeric(as.Date("2016-02-12"))
+
+set.seed(seed)
+```
+
+### Cross-validation
+We split the training set into two for cross validation purposes. 
+Subsample data for Training = 75%
+Subsample data for Training = 25%
+
+```{r datasplitting, echo=TRUE, results='hide'}
+trainingIDX <- createDataPartition(train$classe,p=0.75,list=FALSE)
+trainingDATA <- train[trainingIDX,]
+testingDATA <- train[-trainingIDX,]
+```
+
+
+###Data Overview
+
+
+```{r}
+plot(trainingDATA$classe, col="green", main="Levels of Classe within the training", xlab="Level of Classe", ylab="Frequency")
+```
+
+The data contains 5 levels, A,B,C,D,E. Level A is the most frequent with more than 4000 occurrences while level D is the least frequent with about 2500 occurrences.
+
+##Prediction Model
+
+We are using Random Forest for prediction.
+The errrors of the prediction algorithm is being shown here by using the confusion matrix.
+
+```{r}
+model <- randomForest(classe ~ .,data=trainingDATA, method="class")
+prediction <- predict(model, testingDATA, type ="class") 
+confusionMatrix(prediction, testingDATA$classe)
+```
+
+
+#Result
+
+###Expected out-of-sample error
+
+From the confusion matrix, it can be seen that the Random Forest algorithm's prediction accuracy is 99.39%.
+Out-of-sample error rate calculation is 100% - accuracy = 0.61%.
+Thus, the **out-of-sample error rate is 0.61%**
+
+
+
+###The anwser to the prediction
+```{r}
+answer <- predict(model,test, type="class") 
+answer
+```
+
